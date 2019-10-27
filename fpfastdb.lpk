@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <Package Version="4">
+    <PathDelim Value="\"/>
+    <Name Value="fpFastDB"/>
+    <Type Value="RunAndDesignTime"/>
+    <CompilerOptions>
+      <Version Value="11"/>
+      <PathDelim Value="\"/>
+      <SearchPaths>
+        <OtherUnitFiles Value="FastDbDelphi-v67-Kylix-v3"/>
+        <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)\"/>
+      </SearchPaths>
+    </CompilerOptions>
+    <Files Count="6">
+      <Item1>
+        <Filename Value="FastDbDelphi-v67-Kylix-v3\FastDbCLI.pas"/>
+        <UnitName Value="FastDbCLI"/>
+      </Item1>
+      <Item2>
+        <Filename Value="FastDbDelphi-v67-Kylix-v3\FastDbQuery.pas"/>
+        <UnitName Value="FastDbQuery"/>
+      </Item2>
+      <Item3>
+        <Filename Value="FastDbDelphi-v67-Kylix-v3\FastDbReg.pas"/>
+        <HasRegisterProc Value="True"/>
+        <UnitName Value="FastDbReg"/>
+      </Item3>
+      <Item4>
+        <Filename Value="FastDbDelphi-v67-Kylix-v3\FastDbSession.pas"/>
+        <UnitName Value="FastDbSession"/>
+      </Item4>
+      <Item5>
+        <Filename Value="FastDbDelphi-v67-Kylix-v3\FastDbVar.pas"/>
+        <UnitName Value="FastDbVar"/>
+      </Item5>
+      <Item6>
+        <Filename Value="FastDbDelphi-v67-Kylix-v3\FastDbDataSet.pas"/>
+        <UnitName Value="FastDbDataSet"/>
+      </Item6>
+    </Files>
+    <RequiredPkgs Count="2">
+      <Item1>
+        <PackageName Value="LCL"/>
+      </Item1>
+      <Item2>
+        <PackageName Value="FCL"/>
+      </Item2>
+    </RequiredPkgs>
+    <UsageOptions>
+      <UnitPath Value="$(PkgOutDir)"/>
+    </UsageOptions>
+    <PublishOptions>
+      <Version Value="2"/>
+      <UseFileFilters Value="True"/>
+    </PublishOptions>
+  </Package>
+</CONFIG>

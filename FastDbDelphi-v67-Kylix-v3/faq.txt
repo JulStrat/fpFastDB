@@ -1,0 +1,301 @@
+Q.  Is there a way to customize the location of lock files FastDB 
+    creates from "/tmp" directory to something else?
+A.  There are two ways of specifying location of FastDB temporary files.
+		1. You can just assign your own value to  keyFileDir variable.
+		It's default value is "/tmp/". Do not forget to add '/' at the end.
+		2. If database name contains '/' character, then keyFileDir is not
+		used. For example to create temporary files in current directory you
+		can use "./database" name.
+
+Q.  Could you please explain the query execution plan for this new feature
+    you added to FastDB?
+A.	Imagine that you have to choose phone operator depending on dialed
+		number. For each operator you have range of prefixes (we  can
+		represent them just as list of prefixes), for example routing table
+		can be:
+
+		Wild              *           *           ATT
+		USA               1           1           MCI
+		Delhi, India      911         9117        CKT_1
+		Delhi, India Mob. 9117        9119        CKT_2
+		Bangalore, India  9180        9180        ATT
+		India, Mobile     9189        9199        MCI
+		
+		So given some phone number (for example 9118 1234567) we should choose
+		operator for this number (operator with the longest matching prefix).
+		With standard index you will have to perform several search lookine
+		for prefix with length MAX_PREFIX_LENGTH, then for prefix with length
+		MAX_PREFIX_LENGTH-1, ... for prefix with length 4 (9118), for prefix
+		with length 3 (911), for prefix with length 2 (91) and for prefix with
+		length 1 (9). Once prefix was located in the table we found operator
+		for our number.
+		
+		Now FastDB allows to do it using one search operation using prefix
+		search. If you write query like:
+		
+		char* phone = "91181234567";
+		dbQuery q;
+		q = &phone,"like operatorPrefix+'%'";
+		
+		then FastDB performs prefix search and select all operator which
+		prefixes match with specified number ("Delhi, India" and
+		"Delhi, India Mob." in the example above) with log(N) complexity. 
+    As far as prefixes are sorted in ascending order, you just need to 
+    take the last selected record to choose operator with the longest prefix.
+		
+		The difference between normal search and prefix search is used
+		comparison function. In prefix search comparison function return s0
+		for prefixes of the search key (so prefix "911" is considered to be
+		equal to "91181234567").
+
+Q.  Also, with the introduction of USE_POSIX_MMAP=0, is it now possible to
+    share the database between processes on the same computer?
+A.  First of all USE_POSIX_MMAP is now treated as low-level macro which is
+    intended to be used only when your system doesn't support (or
+    inefficiently support) Posix mmap. The main configuration switch is
+    now DISKLESS_CONFIGRATION. When it is set on, FastDB by default will
+    use SysV shmat for monitor and database file, allowing processes at
+    the same computer to share database.
+
+Q.  Are there any locking or any other concerns I
+    should be aware of if use NO_MMAP with FastDB?
+
+		NO_MMAP has no special locking requirements.
+		As USE_POSIX_MMAP, it is better to avoid explicit use of NO_MMAP. It
+		is switched on explicitly when needed.
+		But if you want to use NO_MMAP and USE_POSIX_MMAP explicitly, then
+		look at the following table:
+		
+		
+		Set macros             Implies      Data file  Monitor  Description
+		---------------------------------------------------------------------
+		USE_POSIX_MMAP=0       NO_MMAP=1    shmat      shmat    normal access
+		---------------------------------------------------------------------
+		USE_POSIX_MMAP=1                    mmap       mmap     private process database
+		----------------------------------------------------------------
+		NO_MMAP                             malloc     shmat    normal access
+		----------------------------------------------------------------
+		DISKLESS_CONFIGURATION NO_MMAP=1    shmat      shmat    transient database
+		                       USE_POSIX_MMAP=0
+		----------------------------------------------------------------
+		DISKLESS_CONFIGURATION              mmap       mmap     transient private database
+		USE_POSIX_MMAP=1
+		----------------------------------------------------------------
+
+Q.  What scenario can cause this error?
+	    Assertion failed: monitor->nWriters == 0, file 
+	    G:\Kylix\FastDB\database.cpp, line 4064
+A.  This assertion failure happens in the following situation:
+			1. Thread owning shared lock but not exclusive lock
+			2. Thread request exclusive lock (try to update db)
+			3. Some other thread has exclusive lock.
+		In theory such situation could not happen: exclusive lock prevent any
+		other thread from setting shared or exclusive locks. Right now I could
+		not understand what can be a reason of such problem. It is needed to
+		obtain more information from debugger - which thread is having
+		exclusive lock (monitor->ownerPid),what is the current state of this
+		thread,...
+		
+Q.  When a thread needs to run a query against a session, once cli_attach is called, 
+    is there a way to do a cli_detach of this context from another thread?
+A.  No, cli_detach should be called from the same thread which call cli_attach. 
+    Actually there are two possible scenarios:
+		
+			1. If thread is created by yourself, then first thing it should do is
+			call cli_attach, and before termination -
+			cli_detach(cli_destroy_context_on_detach|cli_commit_on_detach);
+			
+			2. thread pool is managed by some other library.
+			In this case when you function is invoked (in context of some thread),
+			then at the beginning of the function you do cli_attach and at the end
+			cli_detach(0) or cli_detach(cli_commit_on_detach). Without
+			cli_commit_on_detach flag, FastDB will perform precommit.
+		
+		When database is closed all created thread context are removed (if
+		them are not explicitly removed by cli_detach with
+		cli_destroy_context_on_detach flag).
+		
+		It is not a problem to call cli_attach several times (except that
+		extra requests will be send to the server). Also cli_detach with
+		detach_mode = 0 is equivalent to cli_precommit, so it can be done
+		after processing of each query. I hope that this information is enough
+		for you to be able to automate attaching/detaching threads.
+
+Q.  What's the guideline for using FastDB in a multi-threaded app?
+    (or why am I getting: "ctx != NULL, file G:\Kylix\FastDB\database.cpp, line 3046")
+A.  FastDB has one requirement for multithreaded application:
+		each thread exept ones opened the database should attach itself to the
+		database before start of any operation with database and then detach.
+		As far as CLI APi was originally designed for client-server
+		applications, there are no cli_attach/cli_detach methods in CLI API.
+		I will think more what can be done.
+		The obvious solution is to add cli_attach cli_detach method. is it
+		acceptable for you?
+		Alternative approach is to create context implicitly. But the only
+		problem here is to detect the release unused context (when thread is
+		finished).
+
+Q.  How is the initial database size determined?
+A.  InitDatabaseSize*2 + InitIndexSize*4*2.
+
+Q.  What's the proper use of Freeze/Unfreeze methods of a query?
+A.  The pseudo-code is shown below:
+			while not Query1.eof do begin
+			   while not Query2.eof do begin
+			     while not Query3.eof do begin
+			       ... process Query3 data
+			       Query3.next;
+			     end;
+			
+			     update Query2...
+			     insert into Query4...
+			
+			     Query2.next;
+			
+			     //---------------
+			     Query1.freeze;
+			     Query2.freeze;
+			     Session.Commit;
+			     Query1.unfreeze;
+			     Query2.unfreeze;
+			     //---------------
+			   end;
+			   Query1.next;
+			end;
+			
+Q.  I'd like to build two tables: DialCode and Account with one-to-many 
+    relationship such that a dialcode is owned by many accounts.  What's the proper
+    parameters in the field creation?
+A.  DialCode
+    ========
+    DialCode  cli_string
+    Accounts  cli_array_of_oid, refTableName='Account', inverseRefFieldName='AccountID'
+
+    Account
+    =======
+    AccountID cli_oid, refTableName='DialCode'
+
+Q.  How can I build two tables: DialCode and Account with many-tomany relationship 
+    between them?
+A.  DialCode
+		========
+		DialCode  cli_string
+		Accounts  cli_array_of_oid,
+		          refTableName='Account',
+		          inverseRefFieldName='DialCodes'
+		
+		Account
+		=======
+		DialCodes cli_array_of_oid,
+	            refTableName='DialCode',
+	            inverseRefFieldName='Accounts'
+			
+
+Q.  In the middle of a select query I am executing an insert query in a different 
+    table.  At the end of that insert I want to release locks using cli_commit().  
+    This leads to the fact that the cli_next() on the first query returns end-of-file.  
+    When I am not using the cli_commit(), the query works correctly. Why?
+A.  Commit of transaction cause close of all opened cursors. To be able
+		to reuse cursor in next transaction, it should be "freezed" and later
+		you should do "unfreeze". But is it really necessary to commit transaction 
+    immediately after insert?
+
+Q.  Does a replicated database support TransactionCommitDelay?
+A.  Delayed transactions are not supported in replication mode.
+
+Q.  What is a lifetime of a transaction?
+A.  Transaction is started by execution of any statement (insert/select/delete/update) 
+    and is finished by rollback, commit, precommit or close. 
+
+Q.  What's the difference between cli_commit() and cli_precommit()?
+A.  Precommit does not flush changes to the disk but release locks hold by transactions.
+    Commit writes data to disk.
+
+Q.  How does FastDB determine which HASH or TREE based index to use on a field 
+    if both are available?
+A.  In = operation hash index will always be used, in other operation - B-Tree.
+
+Q.  Does GigaBase support index search by one field, and then index search by another 
+    field in expressions like:   select * from X where field1=%a and field2=%b
+A   If field1 is unique (declared with UNIQUE qualifier), then GigaBASE will perform index search on field1
+> and then check if it match condition for field2. Otherwise GigaBASE
+> will perform index search on field1, index search on field2 and merge
+> results of two searches.
+> 
+> SA> If this is something already implemented, can you add this functionality 
+> SA> in FastDB?
+> 
+> In FastDB it will not perform index search on field1 and then check
+> second condition for all selected records.
+
+Q.  If TransactionCommitDelay is > 0 does commit() write to disk immediately or 
+    after a TransactionCommitDelay?
+A.  FastDB will perform commit after specified interval of time OR earlier 
+    if some other thread/process try to start new transaction.
+
+Q.  Does precommit initiate the commit timer, or is the flash to disk suspended 
+    until the commit() is invoked, in which case the data will be written to disk 
+    in TransactionCommitDelay interval?
+A.  Precommit just releases locks - nothing more. It has no influence on commit.
+
+Q.  If a database is created with a certain size, does it mean that the virtual 
+    shared memory is reserved, and every time there is a request to store an object 
+    no additional heap memory will be used during process allocation 
+    (if the object fits in the reserved database space)?
+A.  No additional heap memory will be used.
+
+Q.  What's the difference in use of cli_asciiz and cli_pasciiz types?
+A.  The difference is:
+			cli_asciiz type is used in the following case:
+			
+			char buf[256];
+			cli_column(statement, _T("name"), cli_asciiz, NULL, buf);
+			...
+			strcpy(buf, "value-1");
+			cli_insert(statement, &oid);
+			...
+			strcpy(buf, "value-2");
+			cli_insert(statement, &oid);
+			...
+			
+			
+			And cli_pasciiz type is used in such way:
+			
+			char* ptr;
+			cli_column(statement, _T("name"), cli_pasciiz, NULL, &ptr);
+			...
+			ptr = "value-1";
+			cli_insert(statement, &oid);
+			...
+			ptr = "value-2";
+			cli_insert(statement, &oid);
+			...
+
+Q.  How to deal with the cli_array_of_string type?  Is it expecting an 
+    array of *(char *), so the size of the buffer should be 
+    (# of array elements)*(sizeof(pointer to char))?  Is the get/set 
+    function going to copy just the array of pointers to (char *),
+    or the strings' content as well?
+A.  In case of array of strings only pointers will be copied. Pointers will
+		point to string bodies in database file (in shared memory section) in
+		case of localcli and to fetch response buffer in case of remove CLI.
+		But in both cases the programmer should do nothing with
+		allocation/deallocation of these strings. Also these pointers are
+		valid only until cursor is positioning on current element. So if you
+		want to store somewhere this array or some elements of array for
+		future use, you should allocate space for the strings and copy them.
+
+Q.  My program is blocked while trying to open database:
+			1. run one instance of a FastDB app (using localcli) that does an 
+			uncommitted transaction and block it with a call to sleep() or just a loop
+			2. run the same application again (it'll be blocked because the first 
+			instance is holding a mutex lock)
+			3. kill the first instance with ^C
+		At this point I assume that the second instance should resume by being 
+		unblocked, but it doesn't.
+A.  FastDB is not able to detect crash of the application and restore
+		monitor to the original state. The only possible workarraound is to
+		use lock timeouts (this parameter is currently not supported at CLI level). 
+    In this case after expiration of timeout the database can revoke the lock 
+    hold by crashed application. But specifying too small timeout can cause 
+    false crash detection.

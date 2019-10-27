@@ -1,0 +1,16 @@
+TestThreadDB.dpr Note: Repairing include files : FastDbConfig.inc
+TestThreadDB.lpi Note: Added defines -dBorland -dVer150 -dDelphi7 -dCompiler6_Up -dPUREPASCAL in custom options
+ Progress: Found all unit files
+TestThreadDB.dpr Note: Removed unit "Windows" from uses section.
+TestThreadDB.dpr(1,22) Note: Added MODE Delphi syntax modifier after unit name.
+ : 
+ : *** Converting unit files belonging to project/package ***
+FastDbCLI.pas Note: Repairing include files : FastDbConfig.inc
+FastDbCLI.pas Note: Removed unit "Windows" from uses section.
+FastDbSession.pas Note: Repairing include files : FastDbConfig.inc
+FastDbSession.pas Note: Removed unit "Windows" from uses section.
+FastDbVar.pas Note: Repairing include files : FastDbConfig.inc
+FastDbVar.pas Note: Removed unit "Windows" from uses section.
+FastDbQuery.pas Note: Repairing include files : FastDbConfig.inc
+FastDbQuery.pas Note: Removed unit "Windows" from uses section.
+ Fatal: Conversion Aborted.
