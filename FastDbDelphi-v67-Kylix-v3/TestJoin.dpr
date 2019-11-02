@@ -36,7 +36,9 @@ begin
   session.DatabasePath     := 'Test.fdb';
   session.InitDatabaseSize := 4*1024;
   session.InitIndexSize    := 1*1024;
+{$ifndef FPC}
   session.InverseReferenceCheck := False;
+{$endif}
   session.Connected := True;
 
   if (ParamCount = 0) then
@@ -118,4 +120,5 @@ begin
   qCode.Free;
   qLocation.Free;
   session.Free;
+  ReadLn;
 end.
