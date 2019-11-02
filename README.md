@@ -1,8 +1,8 @@
 # fpFastDB
 
-Free Pascal / Delpi / Kylix interface to [FastDB](http://www.garret.ru/fastdb.html).
+Free Pascal / Delphi / Kylix interface to [FastDB](http://www.garret.ru/fastdb.html).
 
-Original Delpi / Kylix code by Serge Aleynikov.
+Original Delphi / Kylix code by Serge Aleynikov.
 
 ## Screenshots
 
