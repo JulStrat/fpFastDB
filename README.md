@@ -10,3 +10,4 @@ Original Delphi / Kylix code by Serge Aleynikov.
 
 <img src="https://github.com/JulStrat/fpFastDB/blob/master/TestThreadDB.JPG">
 
+<img src="https://github.com/JulStrat/fpFastDB/blob/master/TestJoin.JPG">
