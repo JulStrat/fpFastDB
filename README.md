@@ -8,5 +8,11 @@ Original Delphi / Kylix code by Serge Aleynikov.
 
 ### Windows
 
-<img src="https://github.com/JulStrat/fpFastDB/blob/master/TestThreadDB.JPG">
+<img src="https://github.com/JulStrat/fpFastDB/blob/devop/TestFastDB.JPG">
+
+<img src="https://github.com/JulStrat/fpFastDB/blob/devop/TestJoin.JPG">
+
+<img src="https://github.com/JulStrat/fpFastDB/blob/devop/TestRefTables.JPG">
+
+<img src="https://github.com/JulStrat/fpFastDB/blob/devop/TestThreadDB.JPG">
 
