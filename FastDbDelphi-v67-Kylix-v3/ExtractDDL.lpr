@@ -1,5 +1,7 @@
 program ExtractDDL;
 
+{$MODE Delphi}
+
 {$APPTYPE CONSOLE}
 
 uses

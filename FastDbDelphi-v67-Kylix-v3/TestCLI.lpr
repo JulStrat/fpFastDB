@@ -123,7 +123,11 @@ begin
       writeln(Format('  -> %d &table->name=0x%p tables->name="%s"', [n, p1, Tables^.name]));
 
       if Tables <> nil then
+        {$ifdef FPC}
+        cli_free_memory(session, Tables);
+        {$else}
         SysFreeMem(Tables);
+        {$endif}
 
       Tables := nil;
       n := cli_show_tables(session, Tables);
@@ -132,7 +136,11 @@ begin
       writeln(Format('  -> %d &table->name=0x%p tables->name="%s"', [n, p1, Tables^.name]));
 
       if Tables <> nil then
+        {$ifdef FPC}
+        cli_free_memory(session, Tables);
+        {$else}
         SysFreeMem(Tables);
+        {$endif}
 
       //writeln(Format('cli_describe(%d, "%s") -> %d', [session, 'persons', cli_describe(session, PChar('persons'), fields)]));
 
@@ -147,7 +155,11 @@ begin
           //for j:=0 to High(fields) do
           //  writeln(Format(#9'%-12s'#9'%-15s'#9'%d', [string(fields[j].name), GetEnumName(TypeInfo(TCliVarType), fields[j].FieldType), fields[j].Flags]));
         finally
+          {$ifdef FPC}
+          cli_free_memory(session, fields);
+          {$else}
           SysFreeMem(fields);
+          {$endif}
         end;
       end;
 
@@ -157,7 +169,7 @@ begin
       CliCheck(cli_column(statement, 'salary',  Ord(cli_int8), nil, @p.salary), 'cli_column 1 failed');
       CliCheck(cli_column(statement, 'address', Ord(cli_pasciiz), @len, @p.address), 'cli_column 1 failed');
       CliCheck(cli_column(statement, 'weight',  Ord(cli_real8), nil, @p.weight), 'cli_column 1 failed');
-      CliCheck(cli_array_column_ex(statement, 'subordinates', Ord(cli_array_of_oid), @p, set_subordinates, get_subordinates), 'cli_column 1 failed');
+      CliCheck(cli_array_column_ex(statement, 'subordinates', Ord(cli_array_of_oid), @p, @set_subordinates, @get_subordinates, @p), 'cli_column 1 failed');
 
       p.name := 'John Smith';
       p.salary := 75000;
@@ -208,7 +220,7 @@ begin
       CliCheck(cli_column(statement, 'salary',  Ord(cli_int8), nil, @p.salary), 'cli_column 2 failed');
       CliCheck(cli_column(statement, 'address', Ord(cli_pasciiz), @len, @p.address), 'cli_column 2 failed');
       CliCheck(cli_column(statement, 'weight',  Ord(cli_real8), nil, @p.weight), 'cli_column 2 failed');
-      CliCheck(cli_array_column_ex(statement, 'subordinates', Ord(cli_array_of_oid), @p, set_subordinates, get_subordinates), 'cli_column 2 failed');
+      CliCheck(cli_array_column_ex(statement, 'subordinates', Ord(cli_array_of_oid), @p, @set_subordinates, @get_subordinates, nil), 'cli_column 2 failed');
 
       CliCheck(cli_parameter(statement, '%subordinates', Ord(cli_int4), @n), 'cli_parameter failed');
       CliCheck(cli_parameter(statement, '%salary',       Ord(cli_int4), @salary), 'cli_parameter failed');

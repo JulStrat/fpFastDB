@@ -33,6 +33,7 @@
 
 *.bat
 *.zip
+*.log
 
 # Debug files
 *.dSYM/
@@ -52,4 +53,9 @@
 lib/
 backup/
 ConverterBackup/
+!FastDbDelphi-v67-Kylix-v3/*.dll
+!FastDbDelphi-v67-Kylix-v3/*.lpi
+!FastDbDelphi-v67-Kylix-v3/*.exe
+
+
 
