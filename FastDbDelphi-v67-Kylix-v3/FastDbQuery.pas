@@ -25,7 +25,9 @@ uses
   , Windows
   {$ENDIF}
   {$IFDEF LINUX}
+  {$ifndef FPC}
   , Libc
+  {$endif}
   {$ENDIF}
   ;
 

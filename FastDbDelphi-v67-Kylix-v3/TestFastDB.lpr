@@ -7,13 +7,21 @@ program TestFastDB;
 {$APPTYPE CONSOLE}
 
 uses
+  {$IFDEF LINUX}
+  {$ifdef FPC}
+  cthreads,
+  {$endif}
+  {$ENDIF}
+
   SysUtils,
   Classes,
   TypInfo,
   {$IFDEF MSWINDOWS}
   {$ENDIF}
   {$IFDEF LINUX}
+  {$ifndef FPC}
   Libc,
+  {$endif}
   {$ENDIF}
   FastDbCLI in 'FastDbCLI.pas',
   FastDbSession in 'FastDbSession.pas',

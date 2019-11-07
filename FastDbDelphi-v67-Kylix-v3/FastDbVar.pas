@@ -39,7 +39,9 @@ uses
   TypInfo,
   Classes,
   {$IFDEF LINUX}
+  {$ifndef FPC}
   Libc,
+  {$endif}
   {$ENDIF}
   {$IFDEF MSWINDOWS}
   Windows,

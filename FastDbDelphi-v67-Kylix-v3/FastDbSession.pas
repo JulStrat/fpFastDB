@@ -29,7 +29,9 @@ interface
 uses
   SysUtils, Classes, StrUtils, Math, FastDbVar, FastDbCLI,
   {$IFDEF LINUX}
+  {$ifndef FPC}
   Types, Libc
+  {$endif}
   {$ENDIF}
   {$IFDEF MSWINDOWS}
   Windows

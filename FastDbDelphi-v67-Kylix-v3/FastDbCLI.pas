@@ -82,8 +82,11 @@ uses
   {$IFDEF CLR}Borland.Win32.Windows{$ELSE}Windows{$ENDIF}
   {$ENDIF}
   {$IFDEF LINUX}
-  Libc,
-  Types
+  {$ifdef FPC}
+  dynlibs
+  {$else}
+  Libc, Types
+  {$endif}
   {$ENDIF}
   ;
 
@@ -99,15 +102,15 @@ const
     {$ENDIF}
   {$ELSE}
     {$IFDEF LINUX}
-    libname = 'libfastdb_r.so'{'libFastDB.so'};
+    libname = 'libfastdb.so'; { v3.75 Compiled on Raspberry Pi }
     {$ENDIF}
     {$IFDEF MSWINDOWS}
-    libname = 'FastDB.dll';
+    libname = 'FastDB.dll'; { old version }
     {$ENDIF}
   {$ENDIF}
 
-  FastDbDefaultInitDatabaseSize  = 4*1024*1024; // Defaukt initial db size (number of objects)
-  FastDbDefaultInitIndexSize     = 512*1024;    // Defaukt initial index size (number of objects)
+  FastDbDefaultInitDatabaseSize  = 4*1024*1024; // Default initial db size (number of objects)
+  FastDbDefaultInitIndexSize     = 512*1024;    // Default initial index size (number of objects)
   FastDbDefaultExtensionQuantum  = 4*1024*1024; // Quantum of extension of allocated memory
   FastDbMaxParallelSearchThreads = 64;          // Maximal number of threads which can be spawned to perform parallel sequentila search
   FastDbDefaultDatabasePort      = 6010;

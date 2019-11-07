@@ -8,13 +8,21 @@ program TestThreadDB;
 {$I FastDbConfig.inc}
 
 uses
+  {$IFDEF LINUX}
+  {$ifdef FPC}
+  cthreads, cmem,
+  {$endif}
+  {$ENDIF}
+
   SysUtils,
   Classes,
   TypInfo,
   {$IFDEF MSWINDOWS}
   {$ENDIF}
   {$IFDEF LINUX}
+  {$ifndef FPC}
   Libc,
+  {$endif}
   {$ENDIF}
   {$IFDEF CODESITE_DEBUG}
   CSIntf,
