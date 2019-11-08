@@ -27,14 +27,14 @@ unit FastDbSession;
 interface
 
 uses
-  SysUtils, Classes, StrUtils, Math, FastDbVar, FastDbCLI,
+  SysUtils, Classes, StrUtils, Math, FastDbVar, FastDbCLI
   {$IFDEF LINUX}
   {$ifndef FPC}
-  Types, Libc
+  ,Types, Libc
   {$endif}
   {$ENDIF}
   {$IFDEF MSWINDOWS}
-  Windows
+  ,Windows
   {$ENDIF}
   ;
 

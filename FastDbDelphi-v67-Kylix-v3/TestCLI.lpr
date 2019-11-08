@@ -150,7 +150,8 @@ begin
       for i:=0 to n-1 do begin
         s := tbl^.name;
         writeln(Format('  %-12s', [s]));
-        writeln(Format('cli_describe -> %d', [cli_describe(session, PChar(s), @fields)]));
+        rc := cli_describe(session, PChar(s), @fields);
+        writeln(Format('cli_describe -> %d', [rc]));
         try
           //for j:=0 to High(fields) do
           //  writeln(Format(#9'%-12s'#9'%-15s'#9'%d', [string(fields[j].name), GetEnumName(TypeInfo(TCliVarType), fields[j].FieldType), fields[j].Flags]));
@@ -177,7 +178,8 @@ begin
       p.weight := 80.3;
       p.n_subordinates := 0;
       p.subordinates := nil;
-      CliCheck(cli_insert_struct(session, 'persons', @p, oid));
+      rc := cli_insert_struct(session, 'persons', @p, oid);
+      CliCheck(rc);
       //CliCheck(cli_insert(statement, @oid), 'cli_insert failed');
 
       p.name := 'Joe Cooker';
