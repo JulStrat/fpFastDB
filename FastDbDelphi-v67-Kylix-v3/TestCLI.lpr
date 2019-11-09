@@ -8,15 +8,21 @@ program TestCLI;
 
 {$IFDEF FPC}
   {$MODE Delphi}
+//  {$PACKRECORDS C}
 {$ENDIF}
 
 {$APPTYPE CONSOLE}
 
 uses
+  {$ifdef FPC}
+  //CTypes,
+  {$endif}
   SysUtils,
   Classes,
   FastDbCLI in 'FastDbCLI.pas',
   FastDbSession in 'FastDbSession.pas';
+
+
 
 type
   TCliOidArray = array[0..0] of TCliOid;
@@ -27,10 +33,10 @@ type
     salary      : TCliInt8;
     address     : PChar;
     weight      : TCliReal8;
-    n_subordinates: TCliInt4;
-    subordinates  : PCliOid;
+    { n_subordinates: TCliInt4; }
+    { subordinates  : PCliOid; }
   end;
-
+{
 function set_subordinates(const ColumnType: Integer;
                           varPtr: Pointer;
                           Len: Integer;
@@ -59,19 +65,19 @@ begin
   len := p^.n_subordinates;
   Result := p^.subordinates;
 end;
-
+}
 procedure SessionErrorHandler(ErrorClassCode: Integer; const Msg: PChar; MsgArg: Integer); cdecl;
 begin
   writeln(Format('Error: %d. %s (%d).', [ErrorClassCode, Msg, MsgArg]));
 end;
 
 const
-  person_descriptor: array[0..4] of TCliFieldDescriptor = (
+  person_descriptor: array[0..3] of TCliFieldDescriptor = (
     (FieldType:cli_asciiz;       Flags:cli_hashed;  Name:'name';    refTableName:nil; inverseRefFieldName:nil),
     (FieldType:cli_int8;         Flags:cli_indexed; Name:'salary';  refTableName:nil; inverseRefFieldName:nil),
     (FieldType:cli_pasciiz;      Flags:0;           Name:'address'; refTableName:nil; inverseRefFieldName:nil),
-    (FieldType:cli_real8;        Flags:0;           Name:'weight';  refTableName:nil; inverseRefFieldName:nil),
-    (FieldType:cli_array_of_oid; Flags:0;           Name:'subordinates'; refTableName:'persons'; inverseRefFieldName:nil));
+    (FieldType:cli_real8;        Flags:0;           Name:'weight';  refTableName:nil; inverseRefFieldName:nil){,
+    (FieldType:cli_array_of_oid; Flags:0;           Name:'subordinates'; refTableName:'persons'; inverseRefFieldName:nil)});
 
 var
   serverURL    : string = 'localhost:6100';
@@ -129,6 +135,7 @@ begin
         SysFreeMem(Tables);
         {$endif}
 
+      (*
       Tables := nil;
       n := cli_show_tables(session, Tables);
       p1 := Tables^.name;
@@ -163,31 +170,37 @@ begin
           {$endif}
         end;
       end;
+      *)
 
       statement := CliCheck(cli_statement(session, 'insert into persons'), 'cli_statement failed');
 
       CliCheck(cli_column(statement, 'name',    Ord(cli_asciiz), nil, @p.name), 'cli_column 1 failed');
-      CliCheck(cli_column(statement, 'salary',  Ord(cli_int8), nil, @p.salary), 'cli_column 1 failed');
-      CliCheck(cli_column(statement, 'address', Ord(cli_pasciiz), @len, @p.address), 'cli_column 1 failed');
-      CliCheck(cli_column(statement, 'weight',  Ord(cli_real8), nil, @p.weight), 'cli_column 1 failed');
-      CliCheck(cli_array_column_ex(statement, 'subordinates', Ord(cli_array_of_oid), @p, @set_subordinates, @get_subordinates, @p), 'cli_column 1 failed');
+      CliCheck(cli_column(statement, 'salary',  Ord(cli_int8), nil, @p.salary), 'cli_column 2 failed');
+      CliCheck(cli_column(statement, 'address', Ord(cli_pasciiz), @len, @p.address), 'cli_column 3 failed');
+      CliCheck(cli_column(statement, 'weight',  Ord(cli_real8), nil, @p.weight), 'cli_column 4 failed');
+{      CliCheck(cli_array_column_ex(statement, 'subordinates', Ord(cli_array_of_oid), @p, @set_subordinates, @get_subordinates, @p), 'cli_column 1 failed'); }
 
       p.name := 'John Smith';
       p.salary := 75000;
       p.address := '1 Guildhall St., Cambridge CB2 3NH, UK';
       p.weight := 80.3;
+      {
       p.n_subordinates := 0;
       p.subordinates := nil;
-      rc := cli_insert_struct(session, 'persons', @p, oid);
+
+      rc := cli_insert_struct(session, 'persons', @p, nil);
       CliCheck(rc);
-      //CliCheck(cli_insert(statement, @oid), 'cli_insert failed');
+      }
+      CliCheck(cli_insert(statement, @oid), 'cli_insert failed');
 
       p.name := 'Joe Cooker';
       p.salary := 100000;
       p.address := 'Outlook drive, 15/3';
       p.weight := 80.3;
+      {
       p.n_subordinates := 1;
       p.subordinates := @oid;
+      }
       rc := cli_insert(statement, nil);
       if (rc <> cli_ok) then begin
           writeln(Format('cli_insert 2 failed with code %d', [rc]));
@@ -204,13 +217,19 @@ begin
 
       writeln;
       writeln('Executing: "select * from persons');
-      writeln('             where length(subordinates) < %sub and salary > %sal"');
+{      writeln('             where length(subordinates) < %sub and salary > %sal"'); }
+      writeln('             where salary > %sal"');
       writeln;
 
-      p.subordinates := nil;
+{      p.subordinates := nil;
       statement := cli_statement(session,
                                 'select * from persons where ' +
                                 'length(subordinates) < %subordinates and salary > %salary');
+}
+      statement := cli_statement(session,
+                                'select * from persons where ' +
+                                'salary > %salary');
+
       if (statement < 0) then begin
           writeln(Format('cli_statement 2 failed with code %d', [rc]));
           exit;
@@ -222,9 +241,11 @@ begin
       CliCheck(cli_column(statement, 'salary',  Ord(cli_int8), nil, @p.salary), 'cli_column 2 failed');
       CliCheck(cli_column(statement, 'address', Ord(cli_pasciiz), @len, @p.address), 'cli_column 2 failed');
       CliCheck(cli_column(statement, 'weight',  Ord(cli_real8), nil, @p.weight), 'cli_column 2 failed');
+{
       CliCheck(cli_array_column_ex(statement, 'subordinates', Ord(cli_array_of_oid), @p, @set_subordinates, @get_subordinates, nil), 'cli_column 2 failed');
 
       CliCheck(cli_parameter(statement, '%subordinates', Ord(cli_int4), @n), 'cli_parameter failed');
+}
       CliCheck(cli_parameter(statement, '%salary',       Ord(cli_int4), @salary), 'cli_parameter failed');
 
       n := 2;
@@ -253,6 +274,7 @@ begin
 
       while rc = cli_ok do begin
         writeln(Format('%s'#9'%d'#9'%n'#9'%s', [p.name, p.salary, p.weight, p.address]));
+        {
         if (p.n_subordinates > 0) then begin
             writeln('Manages:');
             for i:=0 to p.n_subordinates-1 do begin
@@ -270,6 +292,7 @@ begin
               writeln(Format(#9'%s', [name]));
             end;
         end;
+        }
         p.salary := p.salary*90 div 100;
         CliCheck(cli_update(statement), 'cli_update failed');
         rc := cli_get_next(statement);
@@ -333,7 +356,11 @@ begin
             Inc(fld);
           end;
         finally
+          {$ifdef FPC}
+          cli_free_memory(session, fields);
+          {$else}
           SysFreeMem(fields);
+          {$endif}
         end;
       end;
 
@@ -344,7 +371,8 @@ begin
     end;
   finally
     if table_created then
-      CliCheck(cli_drop_table(session, 'persons'), 'cli_drop_table failed');
+      { Check from subsql }
+      { CliCheck(cli_drop_table(session, 'persons'), 'cli_drop_table failed'); }
 
     try
       CliCheck(cli_close(session), 'cli_close failed');

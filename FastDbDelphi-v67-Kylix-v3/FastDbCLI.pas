@@ -1067,7 +1067,8 @@ var
  *     result code as described in cli_result_code enum
  *}
 var
-  cli_insert_struct: function(session: Integer; table_name: PChar; record_struct: Pointer; var oid: TCliOid): Integer; cdecl;
+{  cli_insert_struct: function(session: Integer; table_name: PChar; record_struct: Pointer; var oid: TCliOid): Integer; cdecl; }
+  cli_insert_struct: function(session: Integer; table_name: PChar; record_struct: Pointer; poid: Pointer): Integer; cdecl;
 
 implementation
 
