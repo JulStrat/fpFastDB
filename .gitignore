@@ -47,9 +47,10 @@
 # Pascal
 *.res
 *.lps
-*.lpi
+# *.lpi
 *.ppu
 *.pds
+*.fdb
 lib/
 backup/
 ConverterBackup/
