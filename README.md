@@ -6,6 +6,12 @@ Original Delphi / Kylix code by Serge Aleynikov.
 
 Win32 and Raspberry Pi.
 
+## Facts
+
+1. Query language with SQL-like syntax.
+
+2. Transactions, online backup and automatic recovery after system crash.
+
 ## Screenshots
 
 ### Windows
