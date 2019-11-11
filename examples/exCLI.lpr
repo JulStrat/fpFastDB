@@ -20,7 +20,7 @@ type
 
   PPerson = ^TPerson;
   TPerson = record
-    name        : array[0..63] of Char;
+    name        : PChar; // array[0..63] of Char;
     salary      : TCliInt8;
     address     : PChar;
     weight      : TCliReal8;
@@ -33,7 +33,7 @@ end;
 
 const
   person_descriptor: array[0..3] of TCliFieldDescriptor = (
-    (FieldType:cli_asciiz;  Flags:0; Name:'name';    refTableName:nil; inverseRefFieldName:nil),
+    (FieldType:cli_pasciiz; Flags:0; Name:'name';    refTableName:nil; inverseRefFieldName:nil),
     (FieldType:cli_int8;    Flags:0; Name:'salary';  refTableName:nil; inverseRefFieldName:nil),
     (FieldType:cli_pasciiz; Flags:0; Name:'address'; refTableName:nil; inverseRefFieldName:nil),
     (FieldType:cli_real8;   Flags:0; Name:'weight';  refTableName:nil; inverseRefFieldName:nil));
@@ -58,7 +58,7 @@ begin
     @person_descriptor);
 
   statement := CliCheck(cli_statement(session, 'insert into persons'), 'cli_statement failed');
-  CliCheck(cli_column(statement, 'name',    Ord(cli_asciiz), nil, @p.name), 'cli_column 1 failed');
+  CliCheck(cli_column(statement, 'name',    Ord(cli_asciiz), @len, @p.name), 'cli_column 1 failed');
   CliCheck(cli_column(statement, 'salary',  Ord(cli_int8), nil, @p.salary), 'cli_column 2 failed');
   CliCheck(cli_column(statement, 'address', Ord(cli_pasciiz), @len, @p.address), 'cli_column 3 failed');
   CliCheck(cli_column(statement, 'weight',  Ord(cli_real8), nil, @p.weight), 'cli_column 4 failed');
@@ -76,7 +76,19 @@ begin
   p.weight := 80.3;
 
   CliCheck(cli_insert(statement, @oid), 'cli_insert failed');
-{  cli_insert_struct(session, 'persons', @p, @oid); }
+
+  p.name := 'Joe';
+  p.salary := 110000;
+  p.address := 'Outlook drive, 15/4';
+  p.weight := 81.3;
+  CliCheck(cli_insert_struct(session, 'persons', @p, @oid), 'cli_insert_struct failed');
+
+  p.name := 'Smith';
+  p.salary := 76000;
+  p.address := '2 Guildhall St., Cambridge CB2 3NH, UK';
+  p.weight := 82.3;
+  CliCheck(cli_insert_struct(session, 'persons', @p, @oid), 'cli_insert_struct failed');
+
   CliCheck(cli_commit(session), 'cli_commit failed');
   CliCheck(cli_close(session), 'cli_close failed');
 end.
