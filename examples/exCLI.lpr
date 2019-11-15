@@ -13,6 +13,7 @@ uses
   {$endif}
   SysUtils,
   Classes,
+//  Strings,
   FastDbCLI in 'FastDbCLI.pas';
 
 type
@@ -20,11 +21,13 @@ type
 
   PPerson = ^TPerson;
   TPerson = record
-    name        : PChar; // array[0..63] of Char;
+    name        : PChar;
     salary      : TCliInt8;
     address     : PChar;
     weight      : TCliReal8;
   end;
+
+  TRstr = String[27];
 
 procedure SessionErrorHandler(ErrorClassCode: Integer; const Msg: PChar; MsgArg: Integer); cdecl;
 begin
@@ -42,53 +45,43 @@ var
   serverURL    : string = 'localhost:6100';
   databaseName : string = 'excli';
   filePath     : string = 'excli.fdb';
-  session, statement, rc, len : Integer;
+  session, statement, rc, len, i, tc : Integer;
   oid : TCliOid;
   p : TPerson;
+  rname: TRstr;
+  raddr: TRstr;
+
+procedure mkRandStr(var s: TRstr);
+var
+  i: Integer;
+begin
+  for i := Low(s) to High(s) - 1 do
+    s[i] := Chr(Ord('a') + Random(25));
+  //s[High(s)] := Chr(0);
+end;
 
 begin
   session := cli_open(serverURL, 10, 1);
-  // len := 256;
   session := cli_create(databaseName, filePath, 1024*1024);
-
   cli_create_table(
     session,
     'persons',
     sizeof(person_descriptor) div sizeof(cli_field_descriptor),
     @person_descriptor);
 
-  statement := CliCheck(cli_statement(session, 'insert into persons'), 'cli_statement failed');
-  CliCheck(cli_column(statement, 'name',    Ord(cli_asciiz), @len, @p.name), 'cli_column 1 failed');
-  CliCheck(cli_column(statement, 'salary',  Ord(cli_int8), nil, @p.salary), 'cli_column 2 failed');
-  CliCheck(cli_column(statement, 'address', Ord(cli_pasciiz), @len, @p.address), 'cli_column 3 failed');
-  CliCheck(cli_column(statement, 'weight',  Ord(cli_real8), nil, @p.weight), 'cli_column 4 failed');
+  p.name := @rname;
+  p.address := @raddr;
 
-  p.name := 'John Smith';
-  p.salary := 75000;
-  p.address := '1 Guildhall St., Cambridge CB2 3NH, UK';
-  p.weight := 80.3;
-
-  CliCheck(cli_insert(statement, @oid), 'cli_insert failed');
-
-  p.name := 'Joe Cooker';
-  p.salary := 100000;
-  p.address := 'Outlook drive, 15/3';
-  p.weight := 80.3;
-
-  CliCheck(cli_insert(statement, @oid), 'cli_insert failed');
-
-  p.name := 'Joe';
-  p.salary := 110000;
-  p.address := 'Outlook drive, 15/4';
-  p.weight := 81.3;
-  CliCheck(cli_insert_struct(session, 'persons', @p, @oid), 'cli_insert_struct failed');
-
-  p.name := 'Smith';
-  p.salary := 76000;
-  p.address := '2 Guildhall St., Cambridge CB2 3NH, UK';
-  p.weight := 82.3;
-  CliCheck(cli_insert_struct(session, 'persons', @p, @oid), 'cli_insert_struct failed');
-
+  tc := GetTickCount;
+  for i := 1 to 1024*1024 do
+  begin
+    mkRandStr(rname);
+    mkRandStr(raddr);
+    p.salary := Random(120);
+    CliCheck(cli_insert_struct(session, 'persons', @p, @oid), 'cli_insert_struct failed');
+  end;
+  WriteLn('Inserted - ', 1024*1024, ' records. Time - ', GetTickCount - tc, ' ticks.');
   CliCheck(cli_commit(session), 'cli_commit failed');
   CliCheck(cli_close(session), 'cli_close failed');
+  ReadLn;
 end.
