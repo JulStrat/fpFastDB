@@ -1,4 +1,8 @@
 program TestRefTables;
+{$IF Defined(FPC)}
+{$MODE Delphi}
+{$PACKRECORDS C}
+{$ENDIF}
 
 {$APPTYPE CONSOLE}
 

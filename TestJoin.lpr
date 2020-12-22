@@ -1,4 +1,8 @@
 program TestJoin;
+{$IF Defined(FPC)}
+{$MODE Delphi}
+{$PACKRECORDS C}
+{$ENDIF}
 
 {$APPTYPE CONSOLE}
 
@@ -32,7 +36,9 @@ begin
   session.DatabasePath     := 'Test.fdb';
   session.InitDatabaseSize := 4*1024;
   session.InitIndexSize    := 1*1024;
+  {$IF NOT Defined(FPC)}
   session.InverseReferenceCheck := False;
+  {$ENDIF}
   session.Connected := True;
 
   if (ParamCount = 0) then

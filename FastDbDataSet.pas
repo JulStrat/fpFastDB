@@ -549,7 +549,7 @@ begin
           case DsFieldTypeOfCliType[FieldType] of
             ftBytes:  SetValue(Buffer, TBytesField(Field).Size);
             ftString: asString := PChar(Buffer);
-(*
+            {$IF NOT Defined(FPC)}
             ftArray : for i:=0 to TArrayField(Field).Size-1 do
                         case FieldType of
                           ctArrayOfOID,
@@ -567,7 +567,7 @@ begin
                         else
                           raise EFastDbError.Create(cli_unsupported_type, Format('Field[%s] %s', [Name, GetEnumName(TypeInfo(TCliVarType), Ord(FieldType))]));
                         end;
-*)
+            {$ENDIF}
           else
             SetValue(Buffer, FieldSize);
           end;

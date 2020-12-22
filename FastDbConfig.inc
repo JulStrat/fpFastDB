@@ -4,11 +4,10 @@
 {$ASSERTIONS ON}
 {$D+}
 
-(*
 {$IFDEF MSWINDOWS}
-  {$DEFINE USE_UNDERSCORE_PREFIX}    // Use '_' for DLL procedure names
+  {$UNDEF USE_UNDERSCORE_PREFIX}    // Use '_' for DLL procedure names
 {$ENDIF}
-*)
+
 //---------------------------------------------------------------------------
 // Debug tracing
 //---------------------------------------------------------------------------

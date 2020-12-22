@@ -5,6 +5,10 @@
  (code based on testcli C program from FastDB)
 -------------------------------------------------------------------*}
 program TestCLI;
+{$IF Defined(FPC)}
+{$MODE Delphi}
+{$PACKRECORDS C}
+{$ENDIF}
 
 {$APPTYPE CONSOLE}
 
@@ -32,7 +36,8 @@ function set_subordinates(const ColumnType: Integer;
                           Len: Integer;
                           const ColumnName: PChar;
                           const Statement: Integer;
-                          const SourcePtr: Pointer): Pointer; cdecl;
+                          const SourcePtr: Pointer;
+                          const UserData: Pointer): Pointer; cdecl;
 var
   p: PPerson absolute varPtr;
 begin
@@ -48,7 +53,8 @@ function get_subordinates(const ColumnType: Integer;
                           varPtr: Pointer;
                           var Len: Integer;
                           const ColumnName: PChar;
-                          const Statement: Integer): Pointer; cdecl;
+                          const Statement: Integer;
+                          const UserData: Pointer): Pointer; cdecl;
 var
   p: PPerson absolute varPtr;
 begin
@@ -119,7 +125,11 @@ begin
       writeln(Format('  -> %d &table->name=0x%p tables->name="%s"', [n, p1, Tables^.name]));
 
       if Tables <> nil then
+        {$ifdef FPC}
+        cli_free_memory(session, Tables);
+        {$else}
         SysFreeMem(Tables);
+        {$endif}
 
       Tables := nil;
       n := cli_show_tables(session, Tables);
@@ -128,7 +138,11 @@ begin
       writeln(Format('  -> %d &table->name=0x%p tables->name="%s"', [n, p1, Tables^.name]));
 
       if Tables <> nil then
+        {$ifdef FPC}
+        cli_free_memory(session, Tables);
+        {$else}
         SysFreeMem(Tables);
+        {$endif}
 
       //writeln(Format('cli_describe(%d, "%s") -> %d', [session, 'persons', cli_describe(session, PChar('persons'), fields)]));
 
@@ -143,7 +157,11 @@ begin
           //for j:=0 to High(fields) do
           //  writeln(Format(#9'%-12s'#9'%-15s'#9'%d', [string(fields[j].name), GetEnumName(TypeInfo(TCliVarType), fields[j].FieldType), fields[j].Flags]));
         finally
+          {$ifdef FPC}
+          cli_free_memory(session, fields);
+          {$else}
           SysFreeMem(fields);
+          {$endif}
         end;
       end;
 
@@ -153,7 +171,16 @@ begin
       CliCheck(cli_column(statement, 'salary',  Ord(cli_int8), nil, @p.salary), 'cli_column 1 failed');
       CliCheck(cli_column(statement, 'address', Ord(cli_pasciiz), @len, @p.address), 'cli_column 1 failed');
       CliCheck(cli_column(statement, 'weight',  Ord(cli_real8), nil, @p.weight), 'cli_column 1 failed');
-      CliCheck(cli_array_column_ex(statement, 'subordinates', Ord(cli_array_of_oid), @p, set_subordinates, get_subordinates), 'cli_column 1 failed');
+      CliCheck(
+        cli_array_column_ex(
+          statement,
+          'subordinates',
+          Ord(cli_array_of_oid),
+          @p,
+          set_subordinates,
+          get_subordinates,
+          nil),
+        'cli_column 1 failed');
 
       p.name := 'John Smith';
       p.salary := 75000;
@@ -161,8 +188,8 @@ begin
       p.weight := 80.3;
       p.n_subordinates := 0;
       p.subordinates := nil;
-      CliCheck(cli_insert_struct(session, 'persons', @p, oid));
-      //CliCheck(cli_insert(statement, @oid), 'cli_insert failed');
+      // CliCheck(cli_insert_struct(session, 'persons', @p, oid), 'cli_insert_struct failed');
+      CliCheck(cli_insert(statement, @oid), 'cli_insert failed');
 
       p.name := 'Joe Cooker';
       p.salary := 100000;
@@ -204,7 +231,15 @@ begin
       CliCheck(cli_column(statement, 'salary',  Ord(cli_int8), nil, @p.salary), 'cli_column 2 failed');
       CliCheck(cli_column(statement, 'address', Ord(cli_pasciiz), @len, @p.address), 'cli_column 2 failed');
       CliCheck(cli_column(statement, 'weight',  Ord(cli_real8), nil, @p.weight), 'cli_column 2 failed');
-      CliCheck(cli_array_column_ex(statement, 'subordinates', Ord(cli_array_of_oid), @p, set_subordinates, get_subordinates), 'cli_column 2 failed');
+      CliCheck(
+        cli_array_column_ex(
+          statement,
+          'subordinates',
+          Ord(cli_array_of_oid),
+          @p,
+          set_subordinates,
+          get_subordinates,
+          nil), 'cli_column 2 failed');
 
       CliCheck(cli_parameter(statement, '%subordinates', Ord(cli_int4), @n), 'cli_parameter failed');
       CliCheck(cli_parameter(statement, '%salary',       Ord(cli_int4), @salary), 'cli_parameter failed');
@@ -303,7 +338,11 @@ begin
             Inc(tbl);
           end;
         finally
+          {$ifdef FPC}
+          cli_free_memory(session, tables);
+          {$else}
           SysFreeMem(tables);
+          {$endif}
         end;
 
         rc := CliCheck(cli_describe(session, 'persons', @fields), Format('cli_describe failed with code %d', [rc]));
@@ -315,7 +354,11 @@ begin
             Inc(fld);
           end;
         finally
+          {$ifdef FPC}
+          cli_free_memory(session, fields);
+          {$else}
           SysFreeMem(fields);
+          {$endif}
         end;
       end;
 
